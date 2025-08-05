@@ -39,11 +39,11 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 image_size = 32
 patch_size = 16
 num_classes = 10
-dim = 256
-depth = 8
-heads = 8
-mlp_dim = 512
-epochs = 60
+dim = 512
+depth = 12
+heads = 16
+mlp_dim = 1024
+epochs = 150
 batch_size = 64
 learning_rate = 1e-4
 

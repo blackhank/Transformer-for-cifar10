@@ -66,11 +66,11 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 image_size = 32  # Input image size (CIFAR-10 images are 32x32)
 patch_size = 16  # Size of each image patch
 num_classes = 10  # Number of output classes (CIFAR-10 has 10 classes)
-dim = 256  # Dimension of the patch embeddings and transformer
-depth = 8  # Number of transformer encoder layers
-heads = 8  # Number of attention heads in each transformer layer
-mlp_dim = 512  # Dimension of the Multi-Layer Perceptron (MLP) in transformer
-epochs = 60  # Number of training epochs
+dim = 512  # Dimension of the patch embeddings and transformer
+depth = 12  # Number of transformer encoder layers
+heads = 16  # Number of attention heads in each transformer layer
+mlp_dim = 1024  # Dimension of the Multi-Layer Perceptron (MLP) in transformer
+epochs = 150  # Number of training epochs
 batch_size = 64  # Batch size for training and evaluation
 learning_rate = 1e-4  # Learning rate for the optimizer
 
