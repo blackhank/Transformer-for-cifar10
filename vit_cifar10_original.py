@@ -11,16 +11,20 @@ from fuctions import plot_confusion_matrix
 from torchvision.transforms import RandomCrop, RandomHorizontalFlip
 
 class ViT(nn.Module):
-    def __init__(self, image_size=32, patch_size=16, num_classes=10, dim=256, depth=8, heads=8, mlp_dim=512):
+    def __init__(self, image_size=32, patch_size=16, num_classes=10, dim=512, depth=3, heads=16, mlp_dim=1024):
         super().__init__()
         num_patches = (image_size // patch_size) ** 2
         self.patch_conv = nn.Conv2d(3, dim, kernel_size=patch_size, stride=patch_size)
         self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
         self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
-        self.transformer = nn.TransformerEncoder(
-            nn.TransformerEncoderLayer(d_model=dim, nhead=heads, dim_feedforward=mlp_dim, batch_first=True),
-            num_layers=depth
-        )
+        self.transformer_layers = nn.ModuleList([])
+        heads_per_layer = [16, 8, 16] # Custom heads for each layer
+        for i in range(depth):
+            current_mlp_dim = mlp_dim + i * 64 # Vary mlp_dim for each layer
+            current_heads = heads_per_layer[i] # Use custom heads for each layer
+            self.transformer_layers.append(
+                nn.TransformerEncoderLayer(d_model=dim, nhead=current_heads, dim_feedforward=current_mlp_dim, batch_first=True)
+            )
         self.to_latent = nn.Identity()
         self.linear_head = nn.Linear(dim, num_classes)
 
@@ -30,7 +34,8 @@ class ViT(nn.Module):
         cls_tokens = self.cls_token.expand(b, -1, -1)
         x = torch.cat((cls_tokens, x), dim=1)
         x += self.pos_embedding[:, :(n + 1)]
-        x = self.transformer(x)
+        for layer in self.transformer_layers:
+            x = layer(x)
         x = self.to_latent(x[:, 0])
         return self.linear_head(x)
 
@@ -40,10 +45,10 @@ image_size = 32
 patch_size = 16
 num_classes = 10
 dim = 512
-depth = 12
+depth = 3
 heads = 16
 mlp_dim = 1024
-epochs = 150
+epochs = 200
 batch_size = 64
 learning_rate = 1e-4
 

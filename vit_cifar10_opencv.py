@@ -12,7 +12,7 @@ from torchvision.transforms import RandomCrop, RandomHorizontalFlip
 
 # Define the Vision Transformer (ViT) model
 class ViT(nn.Module):
-    def __init__(self, image_size=32, patch_size=16, num_classes=10, dim=256, depth=8, heads=8, mlp_dim=512):
+    def __init__(self, image_size=32, patch_size=16, num_classes=10, dim=512, depth=3, heads=16, mlp_dim=1024):
         super().__init__()
         # Calculate the number of patches
         num_patches = (image_size // patch_size) ** 2
@@ -23,10 +23,14 @@ class ViT(nn.Module):
         # Class token: A learnable parameter prepended to the sequence of patch embeddings
         self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
         # Transformer Encoder: Composed of multiple encoder layers
-        self.transformer = nn.TransformerEncoder(
-            nn.TransformerEncoderLayer(d_model=dim, nhead=heads, dim_feedforward=mlp_dim, batch_first=True),
-            num_layers=depth
-        )
+        self.transformer_layers = nn.ModuleList([])
+        heads_per_layer = [16, 8, 16] # Custom heads for each layer
+        for i in range(depth):
+            current_mlp_dim = mlp_dim + i * 64 # Vary mlp_dim for each layer
+            current_heads = heads_per_layer[i] # Use custom heads for each layer
+            self.transformer_layers.append(
+                nn.TransformerEncoderLayer(d_model=dim, nhead=current_heads, dim_feedforward=current_mlp_dim, batch_first=True)
+            )
         # To latent: Identity layer, can be replaced with a more complex projection if needed
         self.to_latent = nn.Identity()
         # Linear head: Final classification layer
@@ -50,8 +54,9 @@ class ViT(nn.Module):
         # Add learnable positional embeddings to the combined sequence
         x += self.pos_embedding[:, :(n + 1)]
 
-        # 4. Pass through Transformer Encoder:
-        x = self.transformer(x)
+        # 4. Pass through Transformer Encoder layers:
+        for layer in self.transformer_layers:
+            x = layer(x)
 
         # 5. Classification:
         # Take the output corresponding to the class token (first element in the sequence)
@@ -67,10 +72,10 @@ image_size = 32  # Input image size (CIFAR-10 images are 32x32)
 patch_size = 16  # Size of each image patch
 num_classes = 10  # Number of output classes (CIFAR-10 has 10 classes)
 dim = 512  # Dimension of the patch embeddings and transformer
-depth = 12  # Number of transformer encoder layers
+depth = 3  # Number of transformer encoder layers
 heads = 16  # Number of attention heads in each transformer layer
 mlp_dim = 1024  # Dimension of the Multi-Layer Perceptron (MLP) in transformer
-epochs = 150  # Number of training epochs
+epochs = 200  # Number of training epochs
 batch_size = 64  # Batch size for training and evaluation
 learning_rate = 1e-4  # Learning rate for the optimizer
 
